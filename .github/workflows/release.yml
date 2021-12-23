@@ -33,6 +33,7 @@ jobs:
         with:
           file: Dockerfile
           platforms: ${{ matrix.arch }}
+          target: ${{ matrix.target }}
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
