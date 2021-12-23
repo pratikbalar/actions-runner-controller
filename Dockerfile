@@ -17,8 +17,21 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
   go build -a -o github-webhook-server -trimpath \
     -ldflags "-s -w" ./cmd/githubwebhookserver
 
-FROM alpine:3.15 as upx
-COPY --from=pratikimprowise/upx:3.96 / /
+FROM ubuntu as upx
+SHELL ["/bin/bash","-cx"]
+ARG TARGETARCH TARGETOS
+RUN apt-get update; \
+  apt-get install -y --no-install-recommends xz-utils curl; \
+  if [[ $TARGETARCH == "amd64" || $TARGETARCH == "arm64" || $TARGETARCH == "arm" ]]; then ARCHH="$TARGETARCH"; \
+  elif [[ $TARGETARCH == "mips64le" ]];then ARCHH="mipsel"; \
+  elif [[ $TARGETARCH == "mips64" ]];then ARCHH="mips"; \
+  elif [[ $TARGETARCH == "386" ]];then ARCHH="i386"; fi; \
+  cd /tmp; \
+  curl -Lks 'https://github.com/upx/upx/releases/download/v3.96/upx-3.96-'$ARCHH'_linux.tar.xz' -o - | tar xvJf - -C /tmp/; \
+  mv upx-* upx; \
+  mv upx/upx /usr/local/bin/upx; \
+  rm upx* -rf; \
+  chmod +x /usr/local/bin/upx
 COPY --from=stripped /workspace/manager /workspace/manager
 COPY --from=stripped /workspace/github-webhook-server /workspace/github-webhook-server
 RUN upx -9 /workspace/manager || true && \
@@ -42,7 +55,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
   go build -a -o manager main.go && \
   go build -a -o github-webhook-server ./cmd/githubwebhookserver
 
-FROM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/static:nonroot as full
 WORKDIR /
 COPY --from=builder /workspace/manager .
 COPY --from=builder /workspace/github-webhook-server .
