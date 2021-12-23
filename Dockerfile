@@ -34,8 +34,8 @@ RUN apt-get update; \
   chmod +x /usr/local/bin/upx
 COPY --from=stripped /workspace/manager /workspace/manager
 COPY --from=stripped /workspace/github-webhook-server /workspace/github-webhook-server
-RUN upx -9 /workspace/manager || true && \
-  upx -9 /workspace/github-webhook-server || true
+RUN upx --ultra-brute --best /workspace/manager || true && \
+  upx --ultra-brute --best /workspace/github-webhook-server || true
 
 FROM gcr.io/distroless/static:nonroot as slim
 WORKDIR /
