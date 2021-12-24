@@ -2,10 +2,19 @@ ARG GO_VERSION=1.17
 
 FROM --platform=$BUILDPLATFORM crazymax/goreleaser-xx:edge AS goreleaser-xx
 FROM --platform=$BUILDPLATFORM pratikimprowise/upx AS upx
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.1.0 AS xx
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS base
 COPY --from=goreleaser-xx / /
 COPY --from=upx / /
-RUN apk --update add --no-cache git bash
+COPY --from=xx / /
+RUN apk --update add --no-cache git apk add --no-cache \
+    clang \
+    git \
+    file \
+    lld \
+    llvm \
+    pkgconfig
+
 WORKDIR /src
 
 FROM base AS vendored
@@ -58,6 +67,10 @@ ENTRYPOINT ["/manager"]
 ## Slim image
 FROM vendored AS manager-slim
 ARG TARGETPLATFORM
+RUN xx-apk add --no-cache \
+    gcc \
+    musl-dev
+ENV XX_CC_PREFER_STATIC_LINKER=1
 RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
@@ -77,6 +90,10 @@ RUN --mount=type=bind,source=.,target=/src,rw \
 
 FROM vendored AS ghwserver-slim
 ARG TARGETPLATFORM
+RUN xx-apk add --no-cache \
+    gcc \
+    musl-dev
+ENV XX_CC_PREFER_STATIC_LINKER=1
 RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
