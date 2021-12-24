@@ -30,9 +30,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --dist "/out" \
     --artifacts="bin" \
     --artifacts="archive" \
-    --snapshot="no" \
-    --files="LICENSE" \
-    --files="README.md"
+    --snapshot="no"
 
 FROM vendored AS ghwserver
 ARG TARGETPLATFORM
@@ -46,9 +44,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --dist "/out" \
     --artifacts="bin" \
     --artifacts="archive" \
-    --snapshot="no" \
-    --files="LICENSE" \
-    --files="README.md"
+    --snapshot="no"
 
 FROM gcr.io/distroless/static:nonroot as full
 WORKDIR /
@@ -76,9 +72,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="bin" \
     --artifacts="archive" \
     --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/manager-slim || true'" \
-    --snapshot="no" \
-    --files="LICENSE" \
-    --files="README.md"
+    --snapshot="no"
 
 FROM vendored AS ghwserver-slim
 ARG TARGETPLATFORM
@@ -97,9 +91,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="bin" \
     --artifacts="archive" \
     --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/github-webhook-server-slim || true'" \
-    --snapshot="no" \
-    --files="LICENSE" \
-    --files="README.md"
+    --snapshot="no"
 
 FROM gcr.io/distroless/static:nonroot as slim
 WORKDIR /
