@@ -30,11 +30,11 @@ jobs:
           targets: artifact-all
           files: |
             docker-bake.hcl
+          set: |
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
 
       - uses: actions/upload-artifact@v2
         with:
           name: action-runner-controller
           path: dist/**
-          set: |
-            *.cache-from=type=gha
-            *.cache-to=type=gha,mode=max
