@@ -61,9 +61,8 @@ ENTRYPOINT ["/manager"]
 ## Slim image
 FROM vendored AS manager-slim
 ARG TARGETPLATFORM
-RUN xx-apk add --no-cache \
-    gcc \
-    musl-dev
+RUN xx-apk add --no-cache gcc
+# XX_CC_PREFER_STATIC_LINKER prefers ld to lld in ppc64le and 386.
 ENV XX_CC_PREFER_STATIC_LINKER=1
 RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
@@ -84,9 +83,8 @@ RUN --mount=type=bind,source=.,target=/src,rw \
 
 FROM vendored AS ghwserver-slim
 ARG TARGETPLATFORM
-RUN xx-apk add --no-cache \
-    gcc \
-    musl-dev
+RUN xx-apk add --no-cache gcc
+# XX_CC_PREFER_STATIC_LINKER prefers ld to lld in ppc64le and 386.
 ENV XX_CC_PREFER_STATIC_LINKER=1
 RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
