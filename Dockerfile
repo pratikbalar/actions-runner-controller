@@ -7,12 +7,7 @@ FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS base
 COPY --from=goreleaser-xx / /
 COPY --from=upx / /
 COPY --from=xx / /
-RUN apk --update add --no-cache clang \
-    git \
-    file \
-    lld \
-    llvm \
-    pkgconfig
+RUN apk --update add --no-cache git
 
 WORKDIR /src
 
