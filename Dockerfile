@@ -30,7 +30,9 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --dist "/out" \
     --artifacts="bin" \
     --artifacts="archive" \
-    --snapshot="no"
+    --snapshot="no" \
+    --files="LICENSE" \
+    --files="README.md"
 
 FROM vendored AS ghwserver
 ARG TARGETPLATFORM
@@ -45,7 +47,6 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no"
-
 FROM gcr.io/distroless/static:nonroot as full
 WORKDIR /
 COPY --from=manager /usr/local/bin/manager .
@@ -72,7 +73,9 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="bin" \
     --artifacts="archive" \
     --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/manager-slim || true'" \
-    --snapshot="no"
+    --snapshot="no" \
+    --files="LICENSE" \
+    --files="README.md"
 
 FROM vendored AS ghwserver-slim
 ARG TARGETPLATFORM
