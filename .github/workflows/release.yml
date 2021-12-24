@@ -5,11 +5,6 @@ on:
 jobs:
   image-build:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        arch: [linux/amd64, linux/arm64]
-        target: [full, slim]
     defaults:
       run:
         shell: bash
