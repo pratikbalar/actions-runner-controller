@@ -44,8 +44,10 @@ target "artifact-slim" {
 
 target "artifact-all" {
   inherits = ["artifact-all"]
+  output = ["./dist"]
   platforms = [
     "linux/amd64",
     "linux/arm64",
   ]
+  target = "artifact-slim"
 }
