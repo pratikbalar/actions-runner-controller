@@ -27,7 +27,7 @@ jobs:
         uses: docker/bake-action@master
         with:
           push: false
-          targets: artifact-slim
+          targets: artifact-all
           files: |
             docker-bake.hcl
 
@@ -35,3 +35,6 @@ jobs:
         with:
           name: action-runner-controller
           path: dist/**
+          set: |
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max

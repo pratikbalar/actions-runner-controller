@@ -24,15 +24,15 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    # --flags="-a" \
+    --flags="-a" \
     --name "manager" \
     --main="." \
     --dist "/out" \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no"
-    # --files="LICENSE" \
-    # --files="README.md"
+    --files="LICENSE" \
+    --files="README.md"
 
 FROM vendored AS ghwserver
 ARG TARGETPLATFORM
@@ -40,15 +40,15 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    # --flags="-a" \
+    --flags="-a" \
     --name "github-webhook-server" \
     --main="./cmd/githubwebhookserver" \
     --dist "/out" \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no"
-    # --files="LICENSE" \
-    # --files="README.md"
+    --files="LICENSE" \
+    --files="README.md"
 
 FROM gcr.io/distroless/static:nonroot as full
 WORKDIR /
@@ -69,7 +69,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   goreleaser-xx --debug \
     --name "manager-slim" \
     --flags="-trimpath" \
-    # --flags="-a" \
+    --flags="-a" \
     --ldflags="-s -w" \
     --main="." \
     --dist "/out" \
@@ -77,8 +77,8 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="archive" \
     --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/manager-slim || true'" \
     --snapshot="no"
-    # --files="LICENSE" \
-    # --files="README.md"
+    --files="LICENSE" \
+    --files="README.md"
 
 FROM vendored AS ghwserver-slim
 ARG TARGETPLATFORM
@@ -90,7 +90,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   goreleaser-xx --debug \
     --name "github-webhook-server-slim" \
     --flags="-trimpath" \
-    # --flags="-a" \
+    --flags="-a" \
     --ldflags="-s -w" \
     --main="./cmd/githubwebhookserver" \
     --dist "/out" \
@@ -98,8 +98,8 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="archive" \
     --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/github-webhook-server-slim || true'" \
     --snapshot="no"
-    # --files="LICENSE" \
-    # --files="README.md"
+    --files="LICENSE" \
+    --files="README.md"
 
 FROM gcr.io/distroless/static:nonroot as slim
 WORKDIR /
