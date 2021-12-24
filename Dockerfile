@@ -7,7 +7,7 @@ FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS base
 COPY --from=goreleaser-xx / /
 COPY --from=upx / /
 COPY --from=xx / /
-RUN apk --update add --no-cache git gcc musl-dev
+RUN apk --update add --no-cache git
 
 WORKDIR /src
 
@@ -24,8 +24,8 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --flags="-a" \
     --name "manager" \
+    --flags="-a" \
     --main="." \
     --dist "/out" \
     --artifacts="bin" \
@@ -38,8 +38,8 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --flags="-a" \
     --name "github-webhook-server" \
+    --flags="-a" \
     --main="./cmd/githubwebhookserver" \
     --dist "/out" \
     --artifacts="bin" \
@@ -57,6 +57,9 @@ ENTRYPOINT ["/manager"]
 ## Slim image
 FROM vendored AS manager-slim
 ARG TARGETPLATFORM
+RUN xx-apk add --no-cache \
+    gcc \
+    musl-dev
 # XX_CC_PREFER_STATIC_LINKER prefers ld to lld in ppc64le and 386.
 ENV XX_CC_PREFER_STATIC_LINKER=1
 RUN --mount=type=bind,source=.,target=/src,rw \
@@ -76,6 +79,9 @@ RUN --mount=type=bind,source=.,target=/src,rw \
 
 FROM vendored AS ghwserver-slim
 ARG TARGETPLATFORM
+RUN xx-apk add --no-cache \
+    gcc \
+    musl-dev
 # XX_CC_PREFER_STATIC_LINKER prefers ld to lld in ppc64le and 386.
 ENV XX_CC_PREFER_STATIC_LINKER=1
 RUN --mount=type=bind,source=.,target=/src,rw \
