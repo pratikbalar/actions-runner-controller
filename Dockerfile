@@ -1,64 +1,125 @@
-FROM golang:1.17 as base
-WORKDIR /workspace
+ARG GO_VERSION=1.17
+
+FROM --platform=$BUILDPLATFORM crazymax/goreleaser-xx:edge AS goreleaser-xx
+FROM --platform=$BUILDPLATFORM pratikimprowise/upx AS upx
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS base
+COPY --from=goreleaser-xx / /
+COPY --from=upx / /
+RUN apk --update add --no-cache git bash
+WORKDIR /src
+
+FROM base AS vendored
 ENV GO111MODULE=on
-
-COPY go.mod go.sum ./
-RUN --mount=target=/go/pkg/mod,type=cache go mod download
-COPY . .
-
-### Slim image
-FROM base as stripped
-ARG TARGETARCH TARGETOS
-RUN --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=bind,target=.,rw \
   --mount=type=cache,target=/go/pkg/mod \
-  export CGO_ENABLED=0 GOOS="$TARGETOS" GOARCH="$TARGETARCH" \
-  GOARM="$(echo ${TARGETPLATFORM} | cut -d / -f3 | cut -c2-)" && \
-  go build -a -o manager -trimpath -ldflags "-s -w" main.go && \
-  go build -a -o github-webhook-server -trimpath \
-    -ldflags "-s -w" ./cmd/githubwebhookserver
+  go mod tidy && go mod download
 
-FROM ubuntu as upx
-SHELL ["/bin/bash","-cx"]
-ARG TARGETARCH TARGETOS
-RUN apt-get update; \
-  apt-get install -y --no-install-recommends xz-utils curl; \
-  if [[ $TARGETARCH == "amd64" || $TARGETARCH == "arm64" || $TARGETARCH == "arm" ]]; then ARCHH="$TARGETARCH"; \
-  elif [[ $TARGETARCH == "mips64le" ]];then ARCHH="mipsel"; \
-  elif [[ $TARGETARCH == "mips64" ]];then ARCHH="mips"; \
-  elif [[ $TARGETARCH == "386" ]];then ARCHH="i386"; fi; \
-  cd /tmp; \
-  curl -Lks 'https://github.com/upx/upx/releases/download/v3.96/upx-3.96-'$ARCHH'_linux.tar.xz' -o - | tar xvJf - -C /tmp/; \
-  mv upx-* upx; \
-  mv upx/upx /usr/local/bin/upx; \
-  rm upx* -rf; \
-  chmod +x /usr/local/bin/upx
-COPY --from=stripped /workspace/manager /workspace/manager
-COPY --from=stripped /workspace/github-webhook-server /workspace/github-webhook-server
-RUN upx --ultra-brute --best /workspace/manager || true && \
-  upx --ultra-brute --best /workspace/github-webhook-server || true
-
-FROM gcr.io/distroless/static:nonroot as slim
-WORKDIR /
-COPY --from=upx /workspace/manager .
-COPY --from=upx /workspace/github-webhook-server .
-USER nonroot:nonroot
-ENTRYPOINT ["/manager"]
-###
-
-### non stripped image
-FROM base as builder
-ARG TARGETARCH TARGETOS
-RUN --mount=type=cache,target=/root/.cache/go-build \
+## non slim image
+FROM vendored AS manager
+ARG TARGETPLATFORM
+RUN --mount=type=bind,source=.,target=/src,rw \
+  --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
-  export CGO_ENABLED=0 GOOS="$TARGETOS" GOARCH="$TARGETARCH" \
-  GOARM="$(echo ${TARGETPLATFORM} | cut -d / -f3 | cut -c2-)" && \
-  go build -a -o manager main.go && \
-  go build -a -o github-webhook-server ./cmd/githubwebhookserver
+  goreleaser-xx --debug \
+    # --flags="-a" \
+    --name "manager" \
+    --main="." \
+    --dist "/out" \
+    --artifacts="bin" \
+    --artifacts="archive" \
+    --snapshot="no"
+    # --files="LICENSE" \
+    # --files="README.md"
+
+FROM vendored AS ghwserver
+ARG TARGETPLATFORM
+RUN --mount=type=bind,source=.,target=/src,rw \
+  --mount=type=cache,target=/root/.cache \
+  --mount=type=cache,target=/go/pkg/mod \
+  goreleaser-xx --debug \
+    # --flags="-a" \
+    --name "github-webhook-server" \
+    --main="./cmd/githubwebhookserver" \
+    --dist "/out" \
+    --artifacts="bin" \
+    --artifacts="archive" \
+    --snapshot="no"
+    # --files="LICENSE" \
+    # --files="README.md"
 
 FROM gcr.io/distroless/static:nonroot as full
 WORKDIR /
-COPY --from=builder /workspace/manager .
-COPY --from=builder /workspace/github-webhook-server .
+COPY --from=manager /usr/local/bin/manager .
+COPY --from=ghwserver /usr/local/bin/github-webhook-server .
 USER nonroot:nonroot
 ENTRYPOINT ["/manager"]
+##
+
+## Slim image
+FROM vendored AS manager-slim
+ARG TARGETPLATFORM
+RUN --mount=type=bind,source=.,target=/src,rw \
+  --mount=type=cache,target=/root/.cache \
+  --mount=type=cache,target=/go/pkg/mod \
+  goreleaser-xx --debug \
+    --name "manager-slim" \
+    --flags="-trimpath" \
+    # --flags="-a" \
+    --ldflags="-s -w" \
+    --main="." \
+    --dist "/out" \
+    --artifacts="bin" \
+    --artifacts="archive" \
+    --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/manager-slim || true'" \
+    --snapshot="no"
+    # --files="LICENSE" \
+    # --files="README.md"
+
+FROM vendored AS ghwserver-slim
+ARG TARGETPLATFORM
+RUN --mount=type=bind,source=.,target=/src,rw \
+  --mount=type=cache,target=/root/.cache \
+  --mount=type=cache,target=/go/pkg/mod \
+  goreleaser-xx --debug \
+    --name "github-webhook-server-slim" \
+    --flags="-trimpath" \
+    # --flags="-a" \
+    --ldflags="-s -w" \
+    --main="./cmd/githubwebhookserver" \
+    --dist "/out" \
+    --artifacts="bin" \
+    --artifacts="archive" \
+    --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/github-webhook-server-slim || true'" \
+    --snapshot="no"
+    # --files="LICENSE" \
+    # --files="README.md"
+
+FROM gcr.io/distroless/static:nonroot as slim
+WORKDIR /
+COPY --from=manager-slim /usr/local/bin/manager-slim .
+COPY --from=ghwserver-slim /usr/local/bin/github-webhook-server-slim .
+USER nonroot:nonroot
+ENTRYPOINT ["/manager"]
+##
+
+## get binary out
+### non slim binary
+FROM scratch AS artifact
+COPY --from=manager /usr/local/bin/manager /
+COPY --from=ghwserver /usr/local/bin/github-webhook-server /
 ###
+
+### slim binary
+FROM scratch AS artifact-slim
+COPY --from=manager-slim /usr/local/bin/manager-slim /
+COPY --from=ghwserver-slim /usr/local/bin/github-webhook-server-slim /
+###
+
+### All binaries
+FROM scratch AS artifact-all
+COPY --from=manager-slim /usr/local/bin/manager-slim /
+COPY --from=ghwserver-slim /usr/local/bin/github-webhook-server-slim /
+COPY --from=manager /usr/local/bin/manager /
+COPY --from=ghwserver /usr/local/bin/github-webhook-server /
+###
+##
