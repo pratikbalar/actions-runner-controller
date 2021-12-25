@@ -48,8 +48,51 @@ RUN --mount=type=bind,source=.,target=/src,rw \
 
 FROM gcr.io/distroless/static:nonroot as full
 WORKDIR /
-COPY --from=manager   /usr/local/bin/manager .
-COPY --from=ghwserver /usr/local/bin/github-webhook-server .
+COPY --from=manager   /usr/local/bin/manager /manager
+COPY --from=ghwserver /usr/local/bin/github-webhook-server /github-webhook-server
+USER nonroot:nonroot
+ENTRYPOINT ["/manager"]
+##
+
+## trim image
+FROM vendored AS manager-trim
+ARG TARGETPLATFORM
+RUN --mount=type=bind,source=.,target=/src,rw \
+  --mount=type=cache,target=/root/.cache \
+  --mount=type=cache,target=/go/pkg/mod \
+  goreleaser-xx --debug \
+    --envs="CGO_ENABLED=0" \
+    --name="manager-trim" \
+    --flags="-trimpath" \
+    --flags="-a" \
+    --ldflags="-s -w" \
+    --main="." \
+    --dist="/out" \
+    --artifacts="bin" \
+    --artifacts="archive" \
+    --snapshot="no"
+
+FROM vendored AS ghwserver-trim
+ARG TARGETPLATFORM
+RUN --mount=type=bind,source=.,target=/src,rw \
+  --mount=type=cache,target=/root/.cache \
+  --mount=type=cache,target=/go/pkg/mod \
+  goreleaser-xx --debug \
+    --envs="CGO_ENABLED=0" \
+    --name="github-webhook-server-trim" \
+    --flags="-trimpath" \
+    --flags="-a" \
+    --ldflags="-s -w" \
+    --main="./cmd/githubwebhookserver" \
+    --dist="/out" \
+    --artifacts="bin" \
+    --artifacts="archive" \
+    --snapshot="no"
+
+FROM gcr.io/distroless/static:nonroot as trim
+WORKDIR /
+COPY --from=manager-trim   /usr/local/bin/manager-trim /manager
+COPY --from=ghwserver-trim /usr/local/bin/github-webhook-server-trim /github-webhook-server
 USER nonroot:nonroot
 ENTRYPOINT ["/manager"]
 ##
@@ -93,8 +136,8 @@ RUN --mount=type=bind,source=.,target=/src,rw \
 
 FROM gcr.io/distroless/static:nonroot as slim
 WORKDIR /
-COPY --from=manager-slim   /usr/local/bin/manager-slim .
-COPY --from=ghwserver-slim /usr/local/bin/github-webhook-server-slim .
+COPY --from=manager-slim   /usr/local/bin/manager-slim /manager
+COPY --from=ghwserver-slim /usr/local/bin/github-webhook-server-slim /github-webhook-server
 USER nonroot:nonroot
 ENTRYPOINT ["/manager"]
 ##
@@ -106,6 +149,12 @@ COPY --from=manager   /out /
 COPY --from=ghwserver /out /
 ###
 
+### trim binary
+FROM scratch AS artifact-trim
+COPY --from=manager-trim   /out /
+COPY --from=ghwserver-trim /out /
+###
+
 ### slim binary
 FROM scratch AS artifact-slim
 COPY --from=manager-slim   /out /
@@ -114,9 +163,11 @@ COPY --from=ghwserver-slim /out /
 
 ### All binaries
 FROM scratch AS artifact-all
-COPY --from=manager-slim   /out /
-COPY --from=ghwserver-slim /out /
 COPY --from=manager        /out /
 COPY --from=ghwserver      /out /
+COPY --from=manager-trim   /out /
+COPY --from=ghwserver-trim /out /
+COPY --from=manager-slim   /out /
+COPY --from=ghwserver-slim /out /
 ###
 ##

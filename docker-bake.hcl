@@ -60,9 +60,15 @@ target "artifact-slim" {
   output = ["./dist"]
 }
 
+target "artifact-trim" {
+  inherits = ["_common"]
+  target = "artifact-trim"
+  output = ["./dist"]
+}
+
 target "artifact-all" {
   inherits = ["artifact-all"]
-  target = "artifact-slim"
+  target = "artifact-all"
   output = ["./dist"]
   platforms = [
     "linux/amd64",
@@ -100,6 +106,24 @@ target "full-arm64" {
 target "slim-arm64" {
   inherits = ["_common"]
   target = "artifact-slim"
+  output = ["./dist"]
+  platforms = [
+    "linux/arm64",
+  ]
+}
+
+target "trim-amd64" {
+  inherits = ["_common"]
+  target = "artifact-slim"
+  output = ["./dist"]
+  platforms = [
+    "linux/amd64",
+  ]
+}
+
+target "trim-arm64" {
+  inherits = ["_common"]
+  target = "artifact-trim"
   output = ["./dist"]
   platforms = [
     "linux/arm64",
