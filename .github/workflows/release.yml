@@ -35,6 +35,10 @@ jobs:
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
 
+      - name: Remove json
+        shell: bash
+        run: find ./dist -name *.json* -type f -exec rm -f {} \;
+
       - uses: actions/upload-artifact@v2
         with:
           name: action-runner-controller

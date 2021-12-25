@@ -8,6 +8,24 @@ target "_common" {
   }
 }
 
+target "image" {
+  inherits = ["_common"]
+  target = "full"
+  platforms = [
+    "linux/amd64",
+    "linux/arm64",
+  ]
+}
+
+target "image-slim" {
+  inherits = ["_common"]
+  target = "slim"
+  platforms = [
+    "linux/amd64",
+    "linux/arm64",
+  ]
+}
+
 target "image-local" {
   inherits = ["_common"]
   target = "full"
@@ -51,7 +69,6 @@ target "artifact-all" {
     "linux/arm64",
   ]
 }
-
 
 target "full-amd64" {
   inherits = ["_common"]

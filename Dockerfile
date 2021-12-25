@@ -1,13 +1,11 @@
 ARG GO_VERSION=1.17
 
-FROM --platform=$BUILDPLATFORM crazymax/goreleaser-xx:edge AS goreleaser-xx
-FROM --platform=$BUILDPLATFORM pratikimprowise/upx AS upx
-FROM --platform=$BUILDPLATFORM tonistiigi/xx:1.1.0 AS xx
+FROM --platform=$BUILDPLATFORM crazymax/goreleaser-xx:1.2.2 AS goreleaser-xx
+FROM --platform=$BUILDPLATFORM pratikimprowise/upx:3.96 AS upx
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS base
 COPY --from=goreleaser-xx / /
 COPY --from=upx / /
-COPY --from=xx / /
-RUN apk --update add --no-cache git
+RUN apk --update add --no-cache git gcc musl-dev
 
 WORKDIR /src
 
@@ -20,41 +18,37 @@ RUN --mount=type=bind,target=.,rw \
 ## non slim image
 FROM vendored AS manager
 ARG TARGETPLATFORM
-RUN xx-apk add --no-cache \
-    gcc \
-    musl-dev
 RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --name "manager" \
+    --envs="CGO_ENABLED=0" \
+    --name="manager" \
     --flags="-a" \
     --main="." \
-    --dist "/out" \
+    --dist="/out" \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no"
 
 FROM vendored AS ghwserver
 ARG TARGETPLATFORM
-RUN xx-apk add --no-cache \
-    gcc \
-    musl-dev
 RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --name "github-webhook-server" \
+    --envs="CGO_ENABLED=0" \
+    --name="github-webhook-server" \
     --flags="-a" \
     --main="./cmd/githubwebhookserver" \
-    --dist "/out" \
+    --dist="/out" \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no"
 
 FROM gcr.io/distroless/static:nonroot as full
 WORKDIR /
-COPY --from=manager /usr/local/bin/manager .
+COPY --from=manager   /usr/local/bin/manager .
 COPY --from=ghwserver /usr/local/bin/github-webhook-server .
 USER nonroot:nonroot
 ENTRYPOINT ["/manager"]
@@ -63,51 +57,43 @@ ENTRYPOINT ["/manager"]
 ## Slim image
 FROM vendored AS manager-slim
 ARG TARGETPLATFORM
-RUN xx-apk add --no-cache \
-    gcc \
-    musl-dev
-# XX_CC_PREFER_STATIC_LINKER prefers ld to lld in ppc64le and 386.
-ENV XX_CC_PREFER_STATIC_LINKER=1
 RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --name "manager-slim" \
+    --envs="CGO_ENABLED=0" \
+    --name="manager-slim" \
     --flags="-trimpath" \
     --flags="-a" \
     --ldflags="-s -w" \
     --main="." \
-    --dist "/out" \
+    --dist="/out" \
     --artifacts="bin" \
     --artifacts="archive" \
-    --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/manager-slim || true'" \
-    --snapshot="no"
+    --snapshot="no" \
+    --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/manager-slim || true'"
 
 FROM vendored AS ghwserver-slim
 ARG TARGETPLATFORM
-RUN xx-apk add --no-cache \
-    gcc \
-    musl-dev
-# XX_CC_PREFER_STATIC_LINKER prefers ld to lld in ppc64le and 386.
-ENV XX_CC_PREFER_STATIC_LINKER=1
 RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --name "github-webhook-server-slim" \
+    --envs="CGO_ENABLED=0" \
+    --name="github-webhook-server-slim" \
     --flags="-trimpath" \
     --flags="-a" \
     --ldflags="-s -w" \
     --main="./cmd/githubwebhookserver" \
-    --dist "/out" \
+    --dist="/out" \
     --artifacts="bin" \
     --artifacts="archive" \
-    --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/github-webhook-server-slim || true'" \
-    --snapshot="no"
+    --snapshot="no" \
+    --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/github-webhook-server-slim || true'"
 
 FROM gcr.io/distroless/static:nonroot as slim
 WORKDIR /
-COPY --from=manager-slim /usr/local/bin/manager-slim .
+COPY --from=manager-slim   /usr/local/bin/manager-slim .
 COPY --from=ghwserver-slim /usr/local/bin/github-webhook-server-slim .
 USER nonroot:nonroot
 ENTRYPOINT ["/manager"]
@@ -116,21 +102,21 @@ ENTRYPOINT ["/manager"]
 ## get binary out
 ### non slim binary
 FROM scratch AS artifact
-COPY --from=manager /usr/local/bin/manager /
-COPY --from=ghwserver /usr/local/bin/github-webhook-server /
+COPY --from=manager   /out /
+COPY --from=ghwserver /out /
 ###
 
 ### slim binary
 FROM scratch AS artifact-slim
-COPY --from=manager-slim /usr/local/bin/manager-slim /
-COPY --from=ghwserver-slim /usr/local/bin/github-webhook-server-slim /
+COPY --from=manager-slim   /out /
+COPY --from=ghwserver-slim /out /
 ###
 
 ### All binaries
 FROM scratch AS artifact-all
-COPY --from=manager-slim /usr/local/bin/manager-slim /
-COPY --from=ghwserver-slim /usr/local/bin/github-webhook-server-slim /
-COPY --from=manager /usr/local/bin/manager /
-COPY --from=ghwserver /usr/local/bin/github-webhook-server /
+COPY --from=manager-slim   /out /
+COPY --from=ghwserver-slim /out /
+COPY --from=manager        /out /
+COPY --from=ghwserver      /out /
 ###
 ##
