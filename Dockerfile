@@ -20,6 +20,9 @@ RUN --mount=type=bind,target=.,rw \
 ## non slim image
 FROM vendored AS manager
 ARG TARGETPLATFORM
+RUN xx-apk add --no-cache \
+    gcc \
+    musl-dev
 RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
@@ -34,6 +37,9 @@ RUN --mount=type=bind,source=.,target=/src,rw \
 
 FROM vendored AS ghwserver
 ARG TARGETPLATFORM
+RUN xx-apk add --no-cache \
+    gcc \
+    musl-dev
 RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
