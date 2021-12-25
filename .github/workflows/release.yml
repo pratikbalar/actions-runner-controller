@@ -46,7 +46,7 @@ jobs:
 
   upload-artifact:
     name: Display results
-    needs: image-build
+    needs: bake
     runs-on: ubuntu-latest
     steps:
       - name: Download grep all artifact
