@@ -3,7 +3,11 @@ on:
   push:
 
 jobs:
-  image-build:
+  bake:
+    strategy:
+      fail-fast: true
+      matrix:
+        bake-target: [full-amd64,slim-amd64,full-arm64,slim-arm64]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,7 +31,7 @@ jobs:
         uses: docker/bake-action@master
         with:
           push: false
-          targets: artifact
+          targets: ${{ matrix.bake }}
           files: |
             docker-bake.hcl
           set: |
@@ -38,3 +42,15 @@ jobs:
         with:
           name: action-runner-controller
           path: dist/**
+          retention-days: 1
+
+  upload-artifact:
+    name: Display results
+    needs: image-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download grep all artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: action-runner-controller
+      - run: tree -alt

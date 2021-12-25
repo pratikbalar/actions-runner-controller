@@ -51,3 +51,40 @@ target "artifact-all" {
     "linux/arm64",
   ]
 }
+
+
+target "full-amd64" {
+  inherits = ["_common"]
+  target = "artifact"
+  output = ["./dist"]
+  platforms = [
+    "linux/amd64",
+  ]
+}
+
+target "slim-amd64" {
+  inherits = ["_common"]
+  target = "artifact-slim"
+  output = ["./dist"]
+  platforms = [
+    "linux/amd64",
+  ]
+}
+
+target "full-arm64" {
+  inherits = ["_common"]
+  target = "artifact"
+  output = ["./dist"]
+  platforms = [
+    "linux/arm64",
+  ]
+}
+
+target "slim-arm64" {
+  inherits = ["_common"]
+  target = "artifact-slim"
+  output = ["./dist"]
+  platforms = [
+    "linux/arm64",
+  ]
+}
