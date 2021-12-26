@@ -5,6 +5,7 @@ FROM --platform=$BUILDPLATFORM pratikimprowise/upx:3.96 AS upx
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS base
 COPY --from=goreleaser-xx / /
 COPY --from=upx / /
+ENV CGO_ENABLED=0
 RUN apk --update add --no-cache git gcc musl-dev
 
 WORKDIR /src
@@ -22,7 +23,6 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --envs="CGO_ENABLED=0" \
     --name="manager" \
     --flags="-a" \
     --main="." \
@@ -37,7 +37,6 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --envs="CGO_ENABLED=0" \
     --name="github-webhook-server" \
     --flags="-a" \
     --main="./cmd/githubwebhookserver" \
@@ -61,7 +60,6 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --envs="CGO_ENABLED=0" \
     --name="manager-trim" \
     --flags="-trimpath" \
     --flags="-a" \
@@ -78,7 +76,6 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --envs="CGO_ENABLED=0" \
     --name="github-webhook-server-trim" \
     --flags="-trimpath" \
     --flags="-a" \
@@ -104,7 +101,6 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --envs="CGO_ENABLED=0" \
     --name="manager-slim" \
     --flags="-trimpath" \
     --flags="-a" \
@@ -122,7 +118,6 @@ RUN --mount=type=bind,source=.,target=/src,rw \
   --mount=type=cache,target=/root/.cache \
   --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
-    --envs="CGO_ENABLED=0" \
     --name="github-webhook-server-slim" \
     --flags="-trimpath" \
     --flags="-a" \
