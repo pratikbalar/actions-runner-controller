@@ -23,15 +23,6 @@ target "image-full-all" {
   ]
 }
 
-target "image-trim-all" {
-  inherits = ["_common", "platform"]
-  target   = "slim"
-  platforms = [
-    "linux/amd64",
-    "linux/arm64",
-  ]
-}
-
 target "image-slim-all" {
   inherits = ["_common", "platform"]
   target   = "slim"
@@ -53,12 +44,6 @@ target "artifact-slim" {
   output   = ["./dist"]
 }
 
-target "artifact-trim" {
-  inherits = ["_common"]
-  target   = "artifact-trim"
-  output   = ["./dist"]
-}
-
 target "artifact-all" {
   inherits = ["artifact-all"]
   target   = "artifact-all"
@@ -76,13 +61,6 @@ target "full-amd64" {
   ]
 }
 
-target "trim-amd64" {
-  inherits = ["artifact-trim"]
-  platforms = [
-    "linux/amd64",
-  ]
-}
-
 target "slim-amd64" {
   inherits = ["artifact-slim"]
   platforms = [
@@ -92,13 +70,6 @@ target "slim-amd64" {
 
 target "full-arm64" {
   inherits = ["artifact"]
-  platforms = [
-    "linux/arm64",
-  ]
-}
-
-target "trim-arm64" {
-  inherits = ["artifact-trim"]
   platforms = [
     "linux/arm64",
   ]

@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        bake-target: [full-amd64,slim-amd64,trim-amd64,full-arm64,slim-arm64,trim-arm64]
+        bake-target: [full-amd64, slim-amd64, full-arm64, slim-arm64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

@@ -53,47 +53,6 @@ USER nonroot:nonroot
 ENTRYPOINT ["/manager"]
 ##
 
-## trim image
-FROM vendored AS manager-trim
-ARG TARGETPLATFORM
-RUN --mount=type=bind,source=.,target=/src,rw \
-  --mount=type=cache,target=/root/.cache \
-  --mount=type=cache,target=/go/pkg/mod \
-  goreleaser-xx --debug \
-    --name="manager-trim" \
-    --flags="-trimpath" \
-    --flags="-a" \
-    --ldflags="-s -w" \
-    --main="." \
-    --dist="/out" \
-    --artifacts="bin" \
-    --artifacts="archive" \
-    --snapshot="no"
-
-FROM vendored AS ghwserver-trim
-ARG TARGETPLATFORM
-RUN --mount=type=bind,source=.,target=/src,rw \
-  --mount=type=cache,target=/root/.cache \
-  --mount=type=cache,target=/go/pkg/mod \
-  goreleaser-xx --debug \
-    --name="github-webhook-server-trim" \
-    --flags="-trimpath" \
-    --flags="-a" \
-    --ldflags="-s -w" \
-    --main="./cmd/githubwebhookserver" \
-    --dist="/out" \
-    --artifacts="bin" \
-    --artifacts="archive" \
-    --snapshot="no"
-
-FROM gcr.io/distroless/static:nonroot as trim
-WORKDIR /
-COPY --from=manager-trim   /usr/local/bin/manager-trim /manager
-COPY --from=ghwserver-trim /usr/local/bin/github-webhook-server-trim /github-webhook-server
-USER nonroot:nonroot
-ENTRYPOINT ["/manager"]
-##
-
 ## Slim image
 FROM vendored AS manager-slim
 ARG TARGETPLATFORM
@@ -144,12 +103,6 @@ COPY --from=manager   /out /
 COPY --from=ghwserver /out /
 ###
 
-### trim binary
-FROM scratch AS artifact-trim
-COPY --from=manager-trim   /out /
-COPY --from=ghwserver-trim /out /
-###
-
 ### slim binary
 FROM scratch AS artifact-slim
 COPY --from=manager-slim   /out /
@@ -160,8 +113,6 @@ COPY --from=ghwserver-slim /out /
 FROM scratch AS artifact-all
 COPY --from=manager        /out /
 COPY --from=ghwserver      /out /
-COPY --from=manager-trim   /out /
-COPY --from=ghwserver-trim /out /
 COPY --from=manager-slim   /out /
 COPY --from=ghwserver-slim /out /
 ###
