@@ -16,11 +16,12 @@ RUN --mount=type=bind,source=.,rw \
   goreleaser-xx --debug \
     --name="manager" \
     --dist="/out" \
+    --flags="-a" \
+    --flags="-trimpath" \
     --artifacts="bin" \
     --main="." \
     --ldflags="-s -w" \
-    --envs="GO111MODULE=auto" \
-    --files="README.md"
+    --envs="GO111MODULE=auto"
 
 FROM scratch AS artifact
 COPY --from=build /out /
