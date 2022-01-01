@@ -48,7 +48,7 @@ target "artifact-slim" {
 
 target "artifact-all" {
   inherits = ["artifact-all", "platform"]
-  target   = "artifact-all"
+  target   = "artifact"
   output   = ["./dist"]
 }
 
