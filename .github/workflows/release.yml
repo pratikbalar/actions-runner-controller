@@ -4,10 +4,10 @@ on:
 
 jobs:
   bake:
-    # strategy:
-    #   fail-fast: false
-    #   matrix:
-    #     bake-target: [full-amd64, slim-amd64, full-arm64, slim-arm64]
+    strategy:
+      fail-fast: false
+      matrix:
+        bake-target: [full-amd64, slim-amd64, full-arm64, slim-arm64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -28,7 +28,7 @@ jobs:
         uses: docker/bake-action@master
         with:
           push: false
-          targets: artifact-all
+          targets: ${{ matrix.bake-target }}
           files: |
             docker-bake.hcl
           set: |
