@@ -1,9 +1,6 @@
-# syntax=docker/dockerfile:1.3-labs
-
 ARG GO_VERSION=1.17
-ARG GORELEASER_XX_BASE=crazymax/goreleaser-xx:edge
 
-FROM --platform=$BUILDPLATFORM ${GORELEASER_XX_BASE} AS goreleaser-xx
+FROM --platform=$BUILDPLATFORM crazymax/goreleaser-xx:edge AS goreleaser-xx
 FROM --platform=$BUILDPLATFORM crazymax/goxx:${GO_VERSION} AS base
 ENV CGO_ENABLED=0
 COPY --from=goreleaser-xx / /
