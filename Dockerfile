@@ -1,119 +1,30 @@
+# syntax=docker/dockerfile:1.3-labs
+
 ARG GO_VERSION=1.17
+ARG GORELEASER_XX_BASE=crazymax/goreleaser-xx:edge
 
-FROM --platform=$BUILDPLATFORM crazymax/goreleaser-xx:1.2.2 AS goreleaser-xx
-FROM --platform=$BUILDPLATFORM pratikimprowise/upx:3.96 AS upx
-FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS base
-COPY --from=goreleaser-xx / /
-COPY --from=upx / /
+FROM --platform=$BUILDPLATFORM ${GORELEASER_XX_BASE} AS goreleaser-xx
+FROM --platform=$BUILDPLATFORM crazymax/goxx:${GO_VERSION} AS base
 ENV CGO_ENABLED=0
-RUN apk --update add --no-cache git gcc musl-dev
+COPY --from=goreleaser-xx / /
+WORKDIR /go/src/github.com/crazy-max/goreleaser-xx/demo/cpp
 
-WORKDIR /src
-
-FROM base AS vendored
-ENV GO111MODULE=on
-RUN --mount=type=bind,target=.,rw \
-  --mount=type=cache,target=/go/pkg/mod \
-  go mod tidy && go mod download
-
-## non slim image
-FROM vendored AS manager
+FROM base AS build
 ARG TARGETPLATFORM
-RUN --mount=type=bind,source=.,target=/src,rw \
+RUN --mount=type=bind,source=.,rw \
   --mount=type=cache,target=/root/.cache \
-  --mount=type=cache,target=/go/pkg/mod \
   goreleaser-xx --debug \
     --name="manager" \
-    --flags="-a" \
+    --dist="/out" \
+    --artifacts="bin" \
     --main="." \
-    --dist="/out" \
-    --artifacts="bin" \
-    --artifacts="archive" \
-    --snapshot="no"
-
-FROM vendored AS ghwserver
-ARG TARGETPLATFORM
-RUN --mount=type=bind,source=.,target=/src,rw \
-  --mount=type=cache,target=/root/.cache \
-  --mount=type=cache,target=/go/pkg/mod \
-  goreleaser-xx --debug \
-    --name="github-webhook-server" \
-    --flags="-a" \
-    --main="./cmd/githubwebhookserver" \
-    --dist="/out" \
-    --artifacts="bin" \
-    --artifacts="archive" \
-    --snapshot="no"
-
-FROM gcr.io/distroless/static:nonroot as full
-WORKDIR /
-COPY --from=manager   /usr/local/bin/manager /manager
-COPY --from=ghwserver /usr/local/bin/github-webhook-server /github-webhook-server
-USER nonroot:nonroot
-ENTRYPOINT ["/manager"]
-##
-
-## Slim image
-FROM vendored AS manager-slim
-ARG TARGETPLATFORM
-RUN --mount=type=bind,source=.,target=/src,rw \
-  --mount=type=cache,target=/root/.cache \
-  --mount=type=cache,target=/go/pkg/mod \
-  goreleaser-xx --debug \
-    --name="manager-slim" \
-    --flags="-trimpath" \
-    --flags="-a" \
     --ldflags="-s -w" \
-    --main="." \
-    --dist="/out" \
-    --artifacts="bin" \
-    --artifacts="archive" \
-    --snapshot="no" \
-    --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/manager-slim || true'"
+    --envs="GO111MODULE=auto" \
+    --files="README.md"
 
-FROM vendored AS ghwserver-slim
-ARG TARGETPLATFORM
-RUN --mount=type=bind,source=.,target=/src,rw \
-  --mount=type=cache,target=/root/.cache \
-  --mount=type=cache,target=/go/pkg/mod \
-  goreleaser-xx --debug \
-    --name="github-webhook-server-slim" \
-    --flags="-trimpath" \
-    --flags="-a" \
-    --ldflags="-s -w" \
-    --main="./cmd/githubwebhookserver" \
-    --dist="/out" \
-    --artifacts="bin" \
-    --artifacts="archive" \
-    --snapshot="no" \
-    --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/github-webhook-server-slim || true'"
-
-FROM gcr.io/distroless/static:nonroot as slim
-WORKDIR /
-COPY --from=manager-slim   /usr/local/bin/manager-slim /manager
-COPY --from=ghwserver-slim /usr/local/bin/github-webhook-server-slim /github-webhook-server
-USER nonroot:nonroot
-ENTRYPOINT ["/manager"]
-##
-
-## get binary out
-### non slim binary
 FROM scratch AS artifact
-COPY --from=manager   /out /
-COPY --from=ghwserver /out /
-###
+COPY --from=build /out /
 
-### slim binary
-FROM scratch AS artifact-slim
-COPY --from=manager-slim   /out /
-COPY --from=ghwserver-slim /out /
-###
-
-### All binaries
-FROM scratch AS artifact-all
-COPY --from=manager        /out /
-COPY --from=ghwserver      /out /
-COPY --from=manager-slim   /out /
-COPY --from=ghwserver-slim /out /
-###
-##
+FROM scratch
+COPY --from=build /usr/local/bin/manager /manager
+ENTRYPOINT [ "/manager" ]

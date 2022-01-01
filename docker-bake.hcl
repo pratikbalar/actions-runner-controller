@@ -2,9 +2,18 @@ variable "GO_VERSION" {
   default = "1.17"
 }
 
+variable "RUNNER_VERSION" {
+}
+
+variable "DOCKER_VERSION" {
+  default = "20.10.8"
+}
+
 target "_common" {
   args = {
-    GO_VERSION = GO_VERSION
+    GO_VERSION     = GO_VERSION
+    RUNNER_VERSION = RUNNER_VERSION
+    DOCKER_VERSION = DOCKER_VERSION
   }
 }
 
@@ -14,22 +23,15 @@ target "platform" {
     "linux/arm64",
   ]
 }
+
 target "image-full-all" {
   inherits = ["_common", "platform"]
   target   = "full"
-  platforms = [
-    "linux/amd64",
-    "linux/arm64",
-  ]
 }
 
 target "image-slim-all" {
   inherits = ["_common", "platform"]
   target   = "slim"
-  platforms = [
-    "linux/amd64",
-    "linux/arm64",
-  ]
 }
 
 target "artifact" {
@@ -45,13 +47,9 @@ target "artifact-slim" {
 }
 
 target "artifact-all" {
-  inherits = ["artifact-all"]
+  inherits = ["artifact-all", "platform"]
   target   = "artifact-all"
   output   = ["./dist"]
-  platforms = [
-    "linux/amd64",
-    "linux/arm64",
-  ]
 }
 
 target "full-amd64" {
