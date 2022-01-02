@@ -7,6 +7,7 @@ ENV CGO_ENABLED=0
 ENV GO111MODULE=on
 COPY --from=goreleaser-xx / /
 COPY --from=upx / /
+RUN apt-get update && apt-get install --no-install-recommends -y git
 WORKDIR /src
 
 
