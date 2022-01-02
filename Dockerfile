@@ -69,7 +69,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no" \
-    --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/manager-slim'"
+    --post-hooks="/usr/local/bin/upx --ultra-brute --best /usr/local/bin/manager-slim"
 
 FROM vendored AS ghwserver-slim
 ARG TARGETPLATFORM
@@ -86,7 +86,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no" \
-    --post-hooks="sh -cx 'upx --ultra-brute --best /usr/local/bin/github-webhook-server-slim'"
+    --post-hooks="/usr/local/bin/upx --ultra-brute --best /usr/local/bin/github-webhook-server-slim"
 
 FROM gcr.io/distroless/static:nonroot as slim
 WORKDIR /
