@@ -46,36 +46,9 @@ target "artifact-slim" {
   output   = ["./dist"]
 }
 
+# Creating all full, slim artifact with arm and amd platform
 target "artifact-all" {
   inherits = ["artifact-all", "platform"]
   target   = "artifact-all"
   output   = ["./dist"]
-}
-
-target "full-amd64" {
-  inherits = ["artifact"]
-  platforms = [
-    "linux/amd64",
-  ]
-}
-
-target "slim-amd64" {
-  inherits = ["artifact-slim"]
-  platforms = [
-    "linux/amd64",
-  ]
-}
-
-target "full-arm64" {
-  inherits = ["artifact"]
-  platforms = [
-    "linux/arm64",
-  ]
-}
-
-target "slim-arm64" {
-  inherits = ["artifact-slim"]
-  platforms = [
-    "linux/arm64",
-  ]
 }

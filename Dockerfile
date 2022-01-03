@@ -6,10 +6,8 @@ FROM --platform=$BUILDPLATFORM crazymax/goxx:${GO_VERSION} AS base
 ENV CGO_ENABLED=0
 ENV GO111MODULE=on
 COPY --from=goreleaser-xx / /
-COPY --from=upx / /
 RUN apt-get update && apt-get install --no-install-recommends -y git
 WORKDIR /src
-
 
 FROM base AS vendored
 RUN --mount=type=bind,target=.,rw \
@@ -54,39 +52,13 @@ ENTRYPOINT ["/manager"]
 ##
 
 ## Slim image
-FROM vendored AS manager-slim
-ARG TARGETPLATFORM
-RUN --mount=type=bind,source=.,target=/src,rw \
-  --mount=type=cache,target=/root/.cache \
-  --mount=type=cache,target=/go/pkg/mod \
-  goreleaser-xx --debug \
-    --name="manager-slim" \
-    --flags="-trimpath" \
-    --flags="-a" \
-    --ldflags="-s -w" \
-    --main="." \
-    --dist="/out" \
-    --artifacts="bin" \
-    --artifacts="archive" \
-    --snapshot="no" \
-    --post-hooks="/usr/local/bin/upx --ultra-brute --best /usr/local/bin/manager-slim"
+FROM manager AS manager-slim
+COPY --from=upx / /
+RUN /usr/local/bin/upx --ultra-brute --best -o /usr/local/bin/manager-slim /usr/local/bin/manager
 
-FROM vendored AS ghwserver-slim
-ARG TARGETPLATFORM
-RUN --mount=type=bind,source=.,target=/src,rw \
-  --mount=type=cache,target=/root/.cache \
-  --mount=type=cache,target=/go/pkg/mod \
-  goreleaser-xx --debug \
-    --name="github-webhook-server-slim" \
-    --flags="-trimpath" \
-    --flags="-a" \
-    --ldflags="-s -w" \
-    --main="./cmd/githubwebhookserver" \
-    --dist="/out" \
-    --artifacts="bin" \
-    --artifacts="archive" \
-    --snapshot="no" \
-    --post-hooks="/usr/local/bin/upx --ultra-brute --best /usr/local/bin/github-webhook-server-slim"
+FROM ghwserver AS ghwserver-slim
+COPY --from=upx / /
+RUN /usr/local/bin/upx --ultra-brute --best -0 /usr/local/bin/github-webhook-server-slim /usr/local/bin/github-webhook-server
 
 FROM gcr.io/distroless/static:nonroot as slim
 WORKDIR /

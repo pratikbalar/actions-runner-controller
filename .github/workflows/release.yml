@@ -7,7 +7,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        bake-target: [full-amd64, slim-amd64, full-arm64, slim-arm64]
+        platform: [linux/amd64, linux/arm64]
+        target: [artifact, artifact-slim]
+
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -28,10 +30,11 @@ jobs:
         uses: docker/bake-action@master
         with:
           push: false
-          targets: ${{ matrix.bake-target }}
+          targets: ${{ matrix.target }}
           files: |
             docker-bake.hcl
           set: |
+            *.platform=${{ matrix.platform }}
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
 
