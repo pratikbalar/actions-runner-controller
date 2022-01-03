@@ -58,7 +58,7 @@ RUN /usr/local/bin/upx --ultra-brute --best -o /usr/local/bin/manager-slim /usr/
 
 FROM ghwserver AS ghwserver-slim
 COPY --from=upx / /
-RUN /usr/local/bin/upx --ultra-brute --best -0 /usr/local/bin/github-webhook-server-slim /usr/local/bin/github-webhook-server
+RUN /usr/local/bin/upx --ultra-brute --best -o /usr/local/bin/github-webhook-server-slim /usr/local/bin/github-webhook-server
 
 FROM gcr.io/distroless/static:nonroot as slim
 WORKDIR /
