@@ -45,7 +45,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="archive" \
     --snapshot="no"
 
-FROM gcr.io/distroless/static:nonroot as full
+FROM gcr.io/distroless/static:nonroot as fat
 WORKDIR /
 COPY --from=manager   /usr/local/bin/manager /manager
 COPY --from=ghwserver /usr/local/bin/github-webhook-server /github-webhook-server
@@ -69,7 +69,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no" \
-    --post-hooks="/usr/local/bin/upx --ultra-brute --best /usr/local/bin/manager-slim"
+    --post-hooks="upx --ultra-brute --best /usr/local/bin/{{ .ProjectName }}{{ .Ext }} {{ .Path }}"
 
 FROM vendored AS ghwserver-slim
 ARG TARGETPLATFORM
@@ -86,7 +86,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no" \
-    --post-hooks="/usr/local/bin/upx --ultra-brute --best /usr/local/bin/github-webhook-server-slim"
+    --post-hooks="upx --ultra-brute --best /usr/local/bin/{{ .ProjectName }}{{ .Ext }} {{ .Path }}"
 
 FROM gcr.io/distroless/static:nonroot as slim
 WORKDIR /

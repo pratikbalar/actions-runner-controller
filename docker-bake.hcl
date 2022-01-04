@@ -24,9 +24,9 @@ target "platform" {
   ]
 }
 
-target "image-full-all" {
+target "image-fat-all" {
   inherits = ["_common", "platform"]
-  target   = "full"
+  target   = "fat"
 }
 
 target "image-slim-all" {
@@ -46,7 +46,7 @@ target "artifact-slim" {
   output   = ["./dist"]
 }
 
-# Creating all full, slim artifact with arm and amd platform
+# Creating all fat, slim artifact with arm and amd platform
 target "artifact-all" {
   inherits = ["artifact-all", "platform"]
   target   = "artifact-all"
