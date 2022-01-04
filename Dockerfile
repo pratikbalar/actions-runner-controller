@@ -69,7 +69,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no" \
-    --post-hooks="upx --ultra-brute --best /usr/local/bin/{{ .ProjectName }}{{ .Ext }} {{ .Path }}"
+    --post-hooks="upx --ultra-brute --best -o /usr/local/bin/{{ .ProjectName }}{{ .Ext }} {{ .Path }}"
 
 FROM vendored AS ghwserver-slim
 ARG TARGETPLATFORM
@@ -86,7 +86,7 @@ RUN --mount=type=bind,source=.,target=/src,rw \
     --artifacts="bin" \
     --artifacts="archive" \
     --snapshot="no" \
-    --post-hooks="upx --ultra-brute --best /usr/local/bin/{{ .ProjectName }}{{ .Ext }} {{ .Path }}"
+    --post-hooks="upx --ultra-brute --best -o /usr/local/bin/{{ .ProjectName }}{{ .Ext }} {{ .Path }}"
 
 FROM gcr.io/distroless/static:nonroot as slim
 WORKDIR /
